@@ -130,7 +130,7 @@ public class PostgresType {
                 return DorisType.STRING;
             case JSON:
             case JSONB:
-                return DorisType.JSONB;
+                return DorisType.VARIANT;
                 /* Compatible with doris1.2 array type can only be used in dup table,
                    and then converted to array in the next version
                 case _BOOL:
@@ -153,8 +153,7 @@ public class PostgresType {
                     return String.format("%s<%s>", DorisType.ARRAY, DorisType.DATETIME_V2);
                 **/
             default:
-                throw new UnsupportedOperationException(
-                        "Unsupported Postgres Type: " + postgresType);
+                return DorisType.VARIANT;
         }
     }
 }

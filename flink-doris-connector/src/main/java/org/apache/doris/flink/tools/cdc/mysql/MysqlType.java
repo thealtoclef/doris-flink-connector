@@ -210,9 +210,9 @@ public class MysqlType {
             case SET:
                 return DorisType.STRING;
             case JSON:
-                return DorisType.JSONB;
+                return DorisType.VARIANT;
             default:
-                throw new UnsupportedOperationException("Unsupported MySQL Type: " + type);
+                return DorisType.VARIANT;
         }
     }
 }
