@@ -1,0 +1,13 @@
+postgres-sync-database
+    --database test_e2e_postgres
+    --postgres-conf database-name=postgres
+    --postgres-conf schema-name=test_e2e_postgres
+    --postgres-conf table-name=tbl.*
+    --table-prefix ods_
+    --table-suffix _incr
+    --including-tables "tbl.*"
+    --excluding-tables "tbl4"
+    --sink-conf sink.ignore.update-before=false
+    --table-conf replication_num=1
+    --single-sink true
+    --ignore-default-value false
