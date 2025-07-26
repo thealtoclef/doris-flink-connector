@@ -19,6 +19,16 @@ package org.apache.doris.flink.tools.cdc.postgres;
 
 import org.apache.flink.util.Preconditions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
+import com.fasterxml.jackson.databind.node.FloatNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.doris.flink.catalog.doris.DorisType;
 
 public class PostgresType {
@@ -155,5 +165,53 @@ public class PostgresType {
             default:
                 return DorisType.VARIANT;
         }
+    }
+
+    /**
+     * Infer Doris type from JsonNode value for schema evolution. This method is used when
+     * PostgreSQL logical replication doesn't provide DDL events and we need to deduce column types
+     * from actual data values.
+     */
+    public static String jsonNodeToDorisType(JsonNode value) {
+        if (value == null || value.isNull()) {
+            return DorisType.VARIANT;
+        }
+
+        if (value instanceof IntNode) {
+            return DorisType.INT;
+        } else if (value instanceof LongNode) {
+            return DorisType.BIGINT;
+        } else if (value instanceof FloatNode) {
+            return DorisType.FLOAT;
+        } else if (value instanceof DoubleNode) {
+            return DorisType.DOUBLE;
+        } else if (value instanceof DecimalNode) {
+            return DorisType.DECIMAL_V3 + "(38,9)";
+        } else if (value instanceof BooleanNode) {
+            return DorisType.BOOLEAN;
+        } else if (value instanceof TextNode) {
+            String textValue = value.asText();
+            if (isTimestampLike(textValue)) {
+                return DorisType.DATETIME_V2 + "(6)";
+            } else if (isDateLike(textValue)) {
+                return DorisType.DATE_V2;
+            } else {
+                return DorisType.STRING;
+            }
+        } else if (value instanceof ArrayNode) {
+            return DorisType.VARIANT;
+        } else if (value instanceof ObjectNode) {
+            return DorisType.VARIANT;
+        } else {
+            return DorisType.VARIANT;
+        }
+    }
+
+    private static boolean isTimestampLike(String value) {
+        return value.matches("\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}.*");
+    }
+
+    private static boolean isDateLike(String value) {
+        return value.matches("\\d{4}-\\d{2}-\\d{2}");
     }
 }

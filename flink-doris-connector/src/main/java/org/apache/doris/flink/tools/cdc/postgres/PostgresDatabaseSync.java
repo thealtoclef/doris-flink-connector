@@ -33,10 +33,14 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Preconditions;
 
 import org.apache.doris.flink.catalog.doris.DataModel;
+import org.apache.doris.flink.cfg.DorisExecutionOptions;
+import org.apache.doris.flink.cfg.DorisOptions;
+import org.apache.doris.flink.sink.writer.serializer.DorisRecordSerializer;
 import org.apache.doris.flink.tools.cdc.DatabaseSync;
 import org.apache.doris.flink.tools.cdc.DatabaseSyncConfig;
 import org.apache.doris.flink.tools.cdc.SourceSchema;
 import org.apache.doris.flink.tools.cdc.deserialize.DorisJsonDebeziumDeserializationSchema;
+import org.apache.doris.flink.tools.cdc.postgres.serializer.PostgresJsonDebeziumSchemaSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,6 +233,21 @@ public class PostgresDatabaseSync extends DatabaseSync {
     @Override
     public String getTableListPrefix() {
         return config.get(PostgresSourceOptions.SCHEMA_NAME);
+    }
+
+    @Override
+    public DorisRecordSerializer<String> buildSchemaSerializer(
+            DorisOptions.Builder dorisBuilder, DorisExecutionOptions executionOptions) {
+        return PostgresJsonDebeziumSchemaSerializer.builder()
+                .setDorisOptions(dorisBuilder.build())
+                .setExecutionOptions(executionOptions)
+                .setTableMapping(tableMapping)
+                .setDorisTableConf(dorisTableConfig)
+                .setTargetDatabase(database)
+                .setTargetTablePrefix(tablePrefix)
+                .setTargetTableSuffix(tableSuffix)
+                .setTableNameConverter(converter)
+                .build();
     }
 
     @Override
