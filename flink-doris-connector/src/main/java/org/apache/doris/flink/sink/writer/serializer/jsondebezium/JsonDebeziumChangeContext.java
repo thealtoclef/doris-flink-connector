@@ -47,6 +47,7 @@ public class JsonDebeziumChangeContext implements Serializable {
     private final boolean enableDelete;
     private final String targetTablePrefix;
     private final String targetTableSuffix;
+    private final boolean schemaChangeAdditiveOnly;
     private TableNameConverter tableNameConverter;
 
     public JsonDebeziumChangeContext(
@@ -61,7 +62,8 @@ public class JsonDebeziumChangeContext implements Serializable {
             boolean ignoreUpdateBefore,
             String targetTablePrefix,
             String targetTableSuffix,
-            boolean enableDelete) {
+            boolean enableDelete,
+            boolean schemaChangeAdditiveOnly) {
         this.dorisOptions = dorisOptions;
         this.tableMapping = tableMapping;
         this.sourceTableName = sourceTableName;
@@ -74,6 +76,7 @@ public class JsonDebeziumChangeContext implements Serializable {
         this.enableDelete = enableDelete;
         this.targetTablePrefix = targetTablePrefix;
         this.targetTableSuffix = targetTableSuffix;
+        this.schemaChangeAdditiveOnly = schemaChangeAdditiveOnly;
     }
 
     public JsonDebeziumChangeContext(
@@ -89,6 +92,7 @@ public class JsonDebeziumChangeContext implements Serializable {
             String targetTablePrefix,
             String targetTableSuffix,
             boolean enableDelete,
+            boolean schemaChangeAdditiveOnly,
             TableNameConverter tableNameConverter) {
         this(
                 dorisOptions,
@@ -102,7 +106,8 @@ public class JsonDebeziumChangeContext implements Serializable {
                 ignoreUpdateBefore,
                 targetTablePrefix,
                 targetTableSuffix,
-                enableDelete);
+                enableDelete,
+                schemaChangeAdditiveOnly);
         this.tableNameConverter = tableNameConverter;
     }
 
@@ -163,6 +168,10 @@ public class JsonDebeziumChangeContext implements Serializable {
 
     public DorisTableConfig getDorisTableConf() {
         return dorisTableConfig;
+    }
+
+    public boolean getSchemaChangeAdditiveOnly() {
+        return schemaChangeAdditiveOnly;
     }
 
     @VisibleForTesting

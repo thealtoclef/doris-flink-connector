@@ -76,6 +76,7 @@ public class MongoDBCreateTableTest extends TestJsonDebeziumChangeBase {
                         prefix,
                         suffix,
                         true,
+                        false,
                         new TableNameConverter(prefix, suffix));
         schemaChange = new MongoJsonDebeziumSchemaChange(changeContext);
     }

@@ -114,8 +114,9 @@ public class MongoDBJsonDebeziumSchemaSerializer implements DorisRecordSerialize
                         ignoreUpdateBefore,
                         targetTablePrefix,
                         targetTableSuffix,
-                        enableDelete);
-        changeContext.setTableNameConverter(tableNameConverter);
+                        enableDelete,
+                        true,
+                        tableNameConverter);
         this.dataChange = new MongoJsonDebeziumDataChange(changeContext);
         this.schemaChange = new MongoJsonDebeziumSchemaChange(changeContext);
     }

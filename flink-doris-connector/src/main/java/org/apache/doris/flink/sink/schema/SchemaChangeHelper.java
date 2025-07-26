@@ -90,15 +90,33 @@ public class SchemaChangeHelper {
     }
 
     public static List<String> generateDDLSql(String table) {
+        return generateDDLSql(table, false);
+    }
+
+    public static List<String> generateDDLSql(String table, boolean schemaChangeAdditiveOnly) {
         ddlSchemas.clear();
         List<String> ddlList = Lists.newArrayList();
+
+        // Always add new columns
         for (FieldSchema fieldSchema : addFieldSchemas) {
             ddlList.add(buildAddColumnDDL(table, fieldSchema));
             ddlSchemas.add(new DDLSchema(fieldSchema.getName(), false));
         }
-        for (String columName : dropFieldSchemas) {
-            ddlList.add(buildDropColumnDDL(table, columName));
-            ddlSchemas.add(new DDLSchema(columName, true));
+
+        // Only add drop operations if not in additive-only mode
+        if (!schemaChangeAdditiveOnly) {
+            for (String columName : dropFieldSchemas) {
+                ddlList.add(buildDropColumnDDL(table, columName));
+                ddlSchemas.add(new DDLSchema(columName, true));
+            }
+        } else {
+            // In additive-only mode, log that we're skipping drop operations
+            if (!dropFieldSchemas.isEmpty()) {
+                org.slf4j.LoggerFactory.getLogger(SchemaChangeHelper.class)
+                        .info(
+                                "Additive-only mode: Skipping DROP operations for columns: {}",
+                                dropFieldSchemas);
+            }
         }
 
         dropFieldSchemas.clear();

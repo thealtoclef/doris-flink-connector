@@ -51,7 +51,8 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
                         ignoreUpdateBefore,
                         "",
                         "",
-                        true);
+                        true,
+                        false);
         dataChange = new JsonDebeziumDataChange(changeContext);
     }
 
@@ -115,7 +116,8 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
                         false,
                         "",
                         "",
-                        true);
+                        true,
+                        false);
         dataChange = new JsonDebeziumDataChange(changeContext);
 
         // update t1 set name='doris-update' WHERE id =1;

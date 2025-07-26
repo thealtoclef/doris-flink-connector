@@ -82,6 +82,7 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
     private JsonDebeziumDataChange dataChange;
     private JsonDebeziumSchemaChange schemaChange;
     private SchemaChangeMode schemaChangeMode;
+    private boolean schemaChangeAdditiveOnly;
     private TableNameConverter tableNameConverter;
     private final Set<String> initTableSet = new HashSet<>();
 
@@ -130,6 +131,7 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
             String targetTablePrefix,
             String targetTableSuffix,
             SchemaChangeMode schemaChangeMode,
+            boolean schemaChangeAdditiveOnly,
             TableNameConverter tableNameConverter) {
         this(dorisOptions, pattern, sourceTableName, newSchemaChange, executionOptions);
         this.tableMapping = tableMapping;
@@ -137,6 +139,7 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
         this.targetTablePrefix = targetTablePrefix;
         this.targetTableSuffix = targetTableSuffix;
         this.schemaChangeMode = schemaChangeMode;
+        this.schemaChangeAdditiveOnly = schemaChangeAdditiveOnly;
         this.dorisTableConfig = dorisTableConfig;
         this.tableNameConverter = tableNameConverter;
         init();
@@ -157,6 +160,7 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
                         targetTablePrefix,
                         targetTableSuffix,
                         enableDelete,
+                        schemaChangeAdditiveOnly,
                         tableNameConverter);
         initSchemaChangeInstance(changeContext);
         this.dataChange = new JsonDebeziumDataChange(changeContext);
@@ -232,6 +236,7 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
         private String sourceTableName;
         private boolean newSchemaChange = true;
         private SchemaChangeMode schemaChangeMode;
+        private boolean schemaChangeAdditiveOnly;
         private DorisExecutionOptions executionOptions;
         private Map<String, String> tableMapping;
         private DorisTableConfig dorisTableConfig;
@@ -255,6 +260,12 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
                 return this;
             }
             this.schemaChangeMode = SchemaChangeMode.valueOf(schemaChangeMode.toUpperCase());
+            return this;
+        }
+
+        public JsonDebeziumSchemaSerializer.Builder setSchemaChangeAdditiveOnly(
+                boolean schemaChangeAdditiveOnly) {
+            this.schemaChangeAdditiveOnly = schemaChangeAdditiveOnly;
             return this;
         }
 
@@ -326,6 +337,7 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
                     targetTablePrefix,
                     targetTableSuffix,
                     schemaChangeMode,
+                    schemaChangeAdditiveOnly,
                     tableNameConverter);
         }
     }

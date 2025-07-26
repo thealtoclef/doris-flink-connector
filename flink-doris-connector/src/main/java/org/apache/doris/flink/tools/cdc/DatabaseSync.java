@@ -82,6 +82,7 @@ public abstract class DatabaseSync {
     private boolean createTableOnly = false;
     private boolean newSchemaChange = true;
     private String schemaChangeMode;
+    private boolean schemaChangeAdditiveOnly = false;
     protected String includingTables;
     protected String excludingTables;
     protected String multiToOneOrigin;
@@ -341,6 +342,7 @@ public abstract class DatabaseSync {
                 .setDorisOptions(dorisBuilder.build())
                 .setNewSchemaChange(newSchemaChange)
                 .setSchemaChangeMode(schemaChangeMode)
+                .setSchemaChangeAdditiveOnly(schemaChangeAdditiveOnly)
                 .setExecutionOptions(executionOptions)
                 .setTableMapping(tableMapping)
                 .setDorisTableConf(dorisTableConfig)
@@ -567,6 +569,11 @@ public abstract class DatabaseSync {
             return this;
         }
         this.schemaChangeMode = schemaChangeMode.trim();
+        return this;
+    }
+
+    public DatabaseSync setSchemaChangeAdditiveOnly(boolean schemaChangeAdditiveOnly) {
+        this.schemaChangeAdditiveOnly = schemaChangeAdditiveOnly;
         return this;
     }
 
