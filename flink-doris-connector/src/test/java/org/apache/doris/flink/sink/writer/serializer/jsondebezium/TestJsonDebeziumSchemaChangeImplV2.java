@@ -89,6 +89,7 @@ public class TestJsonDebeziumSchemaChangeImplV2 extends TestJsonDebeziumChangeBa
                         ignoreUpdateBefore,
                         "",
                         "",
+                        true,
                         true);
         schemaChange = new JsonDebeziumSchemaChangeImplV2(changeContext);
 
@@ -105,6 +106,7 @@ public class TestJsonDebeziumSchemaChangeImplV2 extends TestJsonDebeziumChangeBa
                         ignoreUpdateBefore,
                         "ods_",
                         "_dt",
+                        true,
                         true,
                         new TableNameConverter("ods_", "_dt"));
         schemaChangeWithConvert = new JsonDebeziumSchemaChangeImplV2(convertContext);

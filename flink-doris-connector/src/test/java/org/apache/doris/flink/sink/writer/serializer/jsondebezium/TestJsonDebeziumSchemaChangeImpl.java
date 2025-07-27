@@ -64,6 +64,7 @@ public class TestJsonDebeziumSchemaChangeImpl extends TestJsonDebeziumChangeBase
                         ignoreUpdateBefore,
                         "",
                         "",
+                        true,
                         true);
         schemaChange = new JsonDebeziumSchemaChangeImpl(changeContext);
     }

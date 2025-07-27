@@ -79,6 +79,11 @@ public class SQLParserSchemaManager implements Serializable {
      */
     public List<String> parseAlterDDLs(
             SourceConnector sourceConnector, String ddl, String dorisTable) {
+        return parseAlterDDLs(sourceConnector, ddl, dorisTable, true);
+    }
+
+    public List<String> parseAlterDDLs(
+            SourceConnector sourceConnector, String ddl, String dorisTable, boolean enableDrop) {
         List<String> ddlList = new ArrayList<>();
         try {
             Statement statement = CCJSqlParserUtil.parse(ddl);
@@ -89,9 +94,11 @@ public class SQLParserSchemaManager implements Serializable {
                     AlterOperation operation = alterExpression.getOperation();
                     switch (operation) {
                         case DROP:
-                            String dropColumnDDL =
-                                    processDropColumnOperation(alterExpression, dorisTable);
-                            ddlList.add(dropColumnDDL);
+                            if (enableDrop) {
+                                String dropColumnDDL =
+                                        processDropColumnOperation(alterExpression, dorisTable);
+                                ddlList.add(dropColumnDDL);
+                            }
                             break;
                         case ADD:
                             List<String> addColumnDDL =

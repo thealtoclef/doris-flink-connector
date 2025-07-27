@@ -52,6 +52,7 @@ public class MongoDBJsonDebeziumSchemaSerializer implements DorisRecordSerialize
     private String lineDelimiter = LINE_DELIMITER_DEFAULT;
     private boolean ignoreUpdateBefore = true;
     private boolean enableDelete = true;
+    private boolean enableDrop = true;
     // <cdc db.schema.table, doris db.table>
     private Map<String, String> tableMapping;
     // create table properties
@@ -96,6 +97,7 @@ public class MongoDBJsonDebeziumSchemaSerializer implements DorisRecordSerialize
                             .getProperty(LINE_DELIMITER_KEY, LINE_DELIMITER_DEFAULT);
             this.ignoreUpdateBefore = executionOptions.getIgnoreUpdateBefore();
             this.enableDelete = executionOptions.getDeletable();
+            this.enableDrop = executionOptions.getDropable();
         }
         init();
     }
@@ -114,7 +116,8 @@ public class MongoDBJsonDebeziumSchemaSerializer implements DorisRecordSerialize
                         ignoreUpdateBefore,
                         targetTablePrefix,
                         targetTableSuffix,
-                        enableDelete);
+                        enableDelete,
+                        enableDrop);
         changeContext.setTableNameConverter(tableNameConverter);
         this.dataChange = new MongoJsonDebeziumDataChange(changeContext);
         this.schemaChange = new MongoJsonDebeziumSchemaChange(changeContext);

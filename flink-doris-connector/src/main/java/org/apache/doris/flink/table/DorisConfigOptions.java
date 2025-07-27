@@ -253,6 +253,11 @@ public class DorisConfigOptions {
                     .booleanType()
                     .defaultValue(true)
                     .withDescription("whether to enable the delete function");
+    public static final ConfigOption<Boolean> SINK_ENABLE_DROP =
+            ConfigOptions.key("sink.enable-drop")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("whether to enable the drop function");
 
     public static final ConfigOption<String> SINK_WRITE_MODE =
             ConfigOptions.key("sink.write-mode")

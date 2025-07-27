@@ -54,6 +54,7 @@ public class DorisExecutionOptions implements Serializable {
     private final Properties streamLoadProp;
 
     private final Boolean enableDelete;
+    private final Boolean enableDrop;
     private Boolean enable2PC;
     private boolean force2PC;
 
@@ -76,6 +77,7 @@ public class DorisExecutionOptions implements Serializable {
             boolean useCache,
             Properties streamLoadProp,
             Boolean enableDelete,
+            Boolean enableDrop,
             Boolean enable2PC,
             boolean enableBatchMode,
             int flushQueueSize,
@@ -95,6 +97,7 @@ public class DorisExecutionOptions implements Serializable {
         this.useCache = useCache;
         this.streamLoadProp = streamLoadProp;
         this.enableDelete = enableDelete;
+        this.enableDrop = enableDrop;
         this.enable2PC = enable2PC;
         this.force2PC = force2PC;
 
@@ -170,6 +173,10 @@ public class DorisExecutionOptions implements Serializable {
         return enableDelete;
     }
 
+    public Boolean getDropable() {
+        return enableDrop;
+    }
+
     public Boolean enabled2PC() {
         return enable2PC;
     }
@@ -239,6 +246,7 @@ public class DorisExecutionOptions implements Serializable {
                 && Objects.equals(labelPrefix, that.labelPrefix)
                 && Objects.equals(streamLoadProp, that.streamLoadProp)
                 && Objects.equals(enableDelete, that.enableDelete)
+                && Objects.equals(enableDrop, that.enableDrop)
                 && Objects.equals(enable2PC, that.enable2PC)
                 && writeMode == that.writeMode;
     }
@@ -254,6 +262,7 @@ public class DorisExecutionOptions implements Serializable {
                 useCache,
                 streamLoadProp,
                 enableDelete,
+                enableDrop,
                 enable2PC,
                 force2PC,
                 flushQueueSize,
@@ -276,6 +285,7 @@ public class DorisExecutionOptions implements Serializable {
         private boolean useCache = false;
         private Properties streamLoadProp = new Properties();
         private boolean enableDelete = true;
+        private boolean enableDrop = true;
         private boolean enable2PC = true;
 
         // A flag used to determine whether to forcibly open 2pc. By default, the uniq model close
@@ -380,6 +390,17 @@ public class DorisExecutionOptions implements Serializable {
          */
         public Builder setDeletable(Boolean enableDelete) {
             this.enableDelete = enableDelete;
+            return this;
+        }
+
+        /**
+         * Sets whether to perform the drop operation for schema change.
+         *
+         * @param enableDrop
+         * @return this DorisExecutionOptions.builder.
+         */
+        public Builder setDropable(Boolean enableDrop) {
+            this.enableDrop = enableDrop;
             return this;
         }
 
@@ -531,6 +552,7 @@ public class DorisExecutionOptions implements Serializable {
                     useCache,
                     streamLoadProp,
                     enableDelete,
+                    enableDrop,
                     enable2PC,
                     enableBatchMode,
                     flushQueueSize,

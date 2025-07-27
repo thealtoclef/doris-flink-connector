@@ -47,6 +47,7 @@ public class TestSQLParserSchemaChange extends TestJsonDebeziumChangeBase {
                         ignoreUpdateBefore,
                         "",
                         "",
+                        true,
                         true);
         schemaChange = new SQLParserSchemaChange(changeContext);
     }

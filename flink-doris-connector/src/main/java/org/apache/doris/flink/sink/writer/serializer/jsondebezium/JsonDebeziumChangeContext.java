@@ -45,6 +45,7 @@ public class JsonDebeziumChangeContext implements Serializable {
     private final String lineDelimiter;
     private final boolean ignoreUpdateBefore;
     private final boolean enableDelete;
+    private final boolean enableDrop;
     private final String targetTablePrefix;
     private final String targetTableSuffix;
     private TableNameConverter tableNameConverter;
@@ -61,7 +62,8 @@ public class JsonDebeziumChangeContext implements Serializable {
             boolean ignoreUpdateBefore,
             String targetTablePrefix,
             String targetTableSuffix,
-            boolean enableDelete) {
+            boolean enableDelete,
+            boolean enableDrop) {
         this.dorisOptions = dorisOptions;
         this.tableMapping = tableMapping;
         this.sourceTableName = sourceTableName;
@@ -72,6 +74,7 @@ public class JsonDebeziumChangeContext implements Serializable {
         this.lineDelimiter = lineDelimiter;
         this.ignoreUpdateBefore = ignoreUpdateBefore;
         this.enableDelete = enableDelete;
+        this.enableDrop = enableDrop;
         this.targetTablePrefix = targetTablePrefix;
         this.targetTableSuffix = targetTableSuffix;
     }
@@ -89,6 +92,7 @@ public class JsonDebeziumChangeContext implements Serializable {
             String targetTablePrefix,
             String targetTableSuffix,
             boolean enableDelete,
+            boolean enableDrop,
             TableNameConverter tableNameConverter) {
         this(
                 dorisOptions,
@@ -102,7 +106,8 @@ public class JsonDebeziumChangeContext implements Serializable {
                 ignoreUpdateBefore,
                 targetTablePrefix,
                 targetTableSuffix,
-                enableDelete);
+                enableDelete,
+                enableDrop);
         this.tableNameConverter = tableNameConverter;
     }
 
@@ -159,6 +164,10 @@ public class JsonDebeziumChangeContext implements Serializable {
 
     public boolean enableDelete() {
         return enableDelete;
+    }
+
+    public boolean enableDrop() {
+        return enableDrop;
     }
 
     public DorisTableConfig getDorisTableConf() {

@@ -279,6 +279,9 @@ public abstract class DatabaseSync {
                 .getOptional(DorisConfigOptions.SINK_ENABLE_DELETE)
                 .ifPresent(executionBuilder::setDeletable);
         sinkConfig
+                .getOptional(DorisConfigOptions.SINK_ENABLE_DROP)
+                .ifPresent(executionBuilder::setDropable);
+        sinkConfig
                 .getOptional(DorisConfigOptions.SINK_BUFFER_COUNT)
                 .ifPresent(executionBuilder::setBufferCount);
         sinkConfig

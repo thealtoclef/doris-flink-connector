@@ -48,6 +48,7 @@ import static org.apache.doris.flink.table.DorisConfigOptions.SINK_BUFFER_SIZE;
 import static org.apache.doris.flink.table.DorisConfigOptions.SINK_CHECK_INTERVAL;
 import static org.apache.doris.flink.table.DorisConfigOptions.SINK_ENABLE_2PC;
 import static org.apache.doris.flink.table.DorisConfigOptions.SINK_ENABLE_DELETE;
+import static org.apache.doris.flink.table.DorisConfigOptions.SINK_ENABLE_DROP;
 import static org.apache.doris.flink.table.DorisConfigOptions.SINK_LABEL_PREFIX;
 import static org.apache.doris.flink.table.DorisConfigOptions.SINK_MAX_RETRIES;
 import static org.apache.doris.flink.table.DorisConfigOptions.SINK_PARALLELISM;
@@ -99,6 +100,7 @@ public class DorisCatalogFactory implements CatalogFactory {
         options.add(SINK_ENABLE_2PC);
         options.add(SINK_MAX_RETRIES);
         options.add(SINK_ENABLE_DELETE);
+        options.add(SINK_ENABLE_DROP);
         options.add(SINK_LABEL_PREFIX);
         options.add(SINK_BUFFER_SIZE);
         options.add(SINK_BUFFER_COUNT);

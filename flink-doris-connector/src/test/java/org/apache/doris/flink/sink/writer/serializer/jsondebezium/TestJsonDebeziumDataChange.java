@@ -51,6 +51,7 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
                         ignoreUpdateBefore,
                         "",
                         "",
+                        true,
                         true);
         dataChange = new JsonDebeziumDataChange(changeContext);
     }
@@ -115,6 +116,7 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
                         false,
                         "",
                         "",
+                        true,
                         true);
         dataChange = new JsonDebeziumDataChange(changeContext);
 

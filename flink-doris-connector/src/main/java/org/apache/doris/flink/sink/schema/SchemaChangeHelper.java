@@ -90,15 +90,21 @@ public class SchemaChangeHelper {
     }
 
     public static List<String> generateDDLSql(String table) {
+        return generateDDLSql(table, true);
+    }
+
+    public static List<String> generateDDLSql(String table, boolean enableDrop) {
         ddlSchemas.clear();
         List<String> ddlList = Lists.newArrayList();
         for (FieldSchema fieldSchema : addFieldSchemas) {
             ddlList.add(buildAddColumnDDL(table, fieldSchema));
             ddlSchemas.add(new DDLSchema(fieldSchema.getName(), false));
         }
-        for (String columName : dropFieldSchemas) {
-            ddlList.add(buildDropColumnDDL(table, columName));
-            ddlSchemas.add(new DDLSchema(columName, true));
+        if (enableDrop) {
+            for (String columName : dropFieldSchemas) {
+                ddlList.add(buildDropColumnDDL(table, columName));
+                ddlSchemas.add(new DDLSchema(columName, true));
+            }
         }
 
         dropFieldSchemas.clear();

@@ -209,7 +209,7 @@ public class JsonDebeziumSchemaChangeImplV2 extends JsonDebeziumSchemaChange {
         if (!matcher.find()) {
             return null;
         }
-        return SchemaChangeHelper.generateDDLSql(dorisTable);
+        return SchemaChangeHelper.generateDDLSql(dorisTable, changeContext.enableDrop());
     }
 
     @VisibleForTesting
