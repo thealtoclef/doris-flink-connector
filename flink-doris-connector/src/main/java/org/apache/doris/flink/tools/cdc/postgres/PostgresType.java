@@ -19,6 +19,16 @@ package org.apache.doris.flink.tools.cdc.postgres;
 
 import org.apache.flink.util.Preconditions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
+import com.fasterxml.jackson.databind.node.FloatNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.doris.flink.catalog.doris.DorisType;
 
 public class PostgresType {
@@ -155,5 +165,83 @@ public class PostgresType {
             default:
                 return DorisType.VARIANT;
         }
+    }
+
+    /**
+     * Infer Doris type from JsonNode value for schema evolution. This method is used when
+     * PostgreSQL logical replication doesn't provide DDL events and we need to deduce column types
+     * from actual data values. We use loose/conservative typing since we're inferring from single
+     * values, which may not represent the full range of data in the column.
+     */
+    public static String jsonNodeToDorisType(JsonNode value) {
+        if (value == null || value.isNull()) {
+            // For null values, use VARIANT as a catch-all
+            return DorisType.VARIANT;
+        }
+
+        if (value instanceof IntNode || value instanceof LongNode) {
+            // Use BIGINT as loose type to accommodate any integer values
+            return DorisType.BIGINT;
+        } else if (value instanceof FloatNode || value instanceof DoubleNode) {
+            // Use DOUBLE as loose type for floating point numbers
+            return DorisType.DOUBLE;
+        } else if (value instanceof DecimalNode) {
+            // Use loose DECIMAL_V3 with maximum supported precision
+            return DorisType.DECIMAL_V3 + "(38,9)";
+        } else if (value instanceof BooleanNode) {
+            return DorisType.BOOLEAN;
+        } else if (value instanceof TextNode) {
+            String textValue = value.asText();
+            return inferStringType(textValue);
+        } else if (value instanceof ArrayNode || value instanceof ObjectNode) {
+            // Use VARIANT for arrays and objects
+            return DorisType.VARIANT;
+        } else {
+            // For all other types, use VARIANT as a catch-all
+            return DorisType.VARIANT;
+        }
+    }
+
+    private static String inferStringType(String textValue) {
+        if (textValue == null || textValue.isEmpty()) {
+            // For empty strings, use STRING as a catch-all
+            return DorisType.STRING;
+        }
+
+        // Check for clear timestamp patterns (conservative)
+        if (isTimestampLike(textValue)) {
+            return DorisType.DATETIME_V2 + "(6)";
+        }
+
+        // Check for clear date patterns
+        if (isDateLike(textValue)) {
+            return DorisType.DATE_V2;
+        }
+
+        // Check for JSON patterns - these can benefit from VARIANT type
+        if (isJsonLike(textValue)) {
+            return DorisType.VARIANT;
+        }
+
+        // For all other strings, use STRING type (most flexible)
+        // This includes UUIDs, times, and any other string data
+        return DorisType.STRING;
+    }
+
+    private static boolean isTimestampLike(String value) {
+        // Match ISO 8601 timestamps: YYYY-MM-DD HH:MM:SS or YYYY-MM-DDTHH:MM:SS
+        return value.matches("\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}.*");
+    }
+
+    private static boolean isDateLike(String value) {
+        // Match ISO date format: YYYY-MM-DD
+        return value.matches("\\d{4}-\\d{2}-\\d{2}");
+    }
+
+    private static boolean isJsonLike(String value) {
+        // Basic JSON pattern detection
+        value = value.trim();
+        return (value.startsWith("{") && value.endsWith("}"))
+                || (value.startsWith("[") && value.endsWith("]"));
     }
 }
