@@ -94,8 +94,12 @@ public class MongoJsonDebeziumDataChange extends CdcDataChange implements Change
                 addDeleteSign(valueMap, false);
                 break;
             case OP_DELETE:
-                valueMap = extractDeleteRow(recordRoot);
-                addDeleteSign(valueMap, enableDelete);
+                if (enableDelete) {
+                    valueMap = extractDeleteRow(recordRoot);
+                    addDeleteSign(valueMap, true);
+                } else {
+                    return null;
+                }
                 break;
             default:
                 LOG.error("parse record fail, unknown op {} in {}", op, record);
