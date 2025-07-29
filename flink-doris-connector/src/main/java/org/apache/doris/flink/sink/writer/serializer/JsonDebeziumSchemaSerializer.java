@@ -34,8 +34,6 @@ import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumCh
 import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumChangeUtils;
 import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumDataChange;
 import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumSchemaChange;
-import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumSchemaChangeImpl;
-import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumSchemaChangeImplV2;
 import org.apache.doris.flink.sink.writer.serializer.jsondebezium.SQLParserSchemaChange;
 import org.apache.doris.flink.tools.cdc.DorisTableConfig;
 import org.apache.doris.flink.tools.cdc.converter.TableNameConverter;
@@ -166,22 +164,15 @@ public class JsonDebeziumSchemaSerializer implements DorisRecordSerializer<Strin
     }
 
     private void initSchemaChangeInstance(JsonDebeziumChangeContext changeContext) {
-        if (!newSchemaChange) {
-            LOG.info(
-                    "newSchemaChange set to false, instantiation schema change uses JsonDebeziumSchemaChangeImpl.");
-            this.schemaChange = new JsonDebeziumSchemaChangeImpl(changeContext);
-            return;
+        if (Objects.nonNull(newSchemaChange)) {
+            LOG.warn(
+                    "The 'use-new-schema-change' configuration is deprecated. This setting no longer has any effect. You can safely remove this configuration from your job settings.");
         }
-
-        if (Objects.nonNull(schemaChangeMode)
-                && SchemaChangeMode.SQL_PARSER.equals(schemaChangeMode)) {
-            LOG.info(
-                    "SchemaChangeMode set to SQL_PARSER, instantiation schema change uses SQLParserService.");
-            this.schemaChange = new SQLParserSchemaChange(changeContext);
-        } else {
-            LOG.info("instantiation schema change uses JsonDebeziumSchemaChangeImplV2.");
-            this.schemaChange = new JsonDebeziumSchemaChangeImplV2(changeContext);
+        if (Objects.nonNull(schemaChangeMode)) {
+            LOG.warn(
+                    "The 'schema-change-mode' configuration is deprecated. This setting no longer has any effect. You can safely remove this configuration from your job settings.");
         }
+        this.schemaChange = new SQLParserSchemaChange(changeContext);
     }
 
     @Override
