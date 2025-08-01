@@ -148,6 +148,10 @@ public abstract class DatabaseSync {
             // Calculate the mapping relationship between upstream and downstream tables
             tableMapping.put(
                     schema.getTableIdentifier(), String.format("%s.%s", targetDb, dorisTable));
+
+            // Add CDC timestamp fields for tracking change events
+            DorisTableUtil.addCdcTimestampFields(schema);
+
             DorisTableUtil.tryCreateTableIfAbsent(
                     dorisSystem,
                     targetDb,

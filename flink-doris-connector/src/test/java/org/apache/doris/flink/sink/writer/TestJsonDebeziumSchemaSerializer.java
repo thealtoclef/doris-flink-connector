@@ -55,13 +55,27 @@ public class TestJsonDebeziumSchemaSerializer {
         this.objectMapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
         JsonNodeFactory jsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true);
         this.objectMapper.setNodeFactory(jsonNodeFactory);
-        this.serializer =
-                JsonDebeziumSchemaSerializer.builder().setDorisOptions(dorisOptions).build();
         this.mockSchemaChangeManager = Mockito.mock(SchemaChangeManager.class);
         Mockito.when(
                         mockSchemaChangeManager.checkSchemaChange(
                                 Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(true);
+        // Mock the new methods required by ensureCdcTimestampColumns
+        Mockito.when(
+                        mockSchemaChangeManager.checkColumnExists(
+                                Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(true); // Assume columns already exist to avoid adding them
+        Mockito.when(
+                        mockSchemaChangeManager.addColumn(
+                                Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                .thenReturn(true);
+        // Create serializer after setting up mock
+        this.serializer =
+                JsonDebeziumSchemaSerializer.builder().setDorisOptions(dorisOptions).build();
+        // Set the mocked schema change manager on the serializer's schema change instance
+        this.serializer
+                .getJsonDebeziumSchemaChange()
+                .setSchemaChangeManager(mockSchemaChangeManager);
     }
 
     @Test
@@ -83,6 +97,6 @@ public class TestJsonDebeziumSchemaSerializer {
         Assert.assertEquals("2022-01-01 10:01:02", valueMap.get("dtime"));
         Assert.assertEquals("2022-01-01 10:01:03", valueMap.get("ts"));
         Assert.assertEquals("0", valueMap.get("__DORIS_DELETE_SIGN__"));
-        Assert.assertEquals(6, valueMap.size());
+        Assert.assertEquals(8, valueMap.size());
     }
 }

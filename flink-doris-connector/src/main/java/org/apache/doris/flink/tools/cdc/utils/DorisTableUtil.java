@@ -21,6 +21,7 @@ import org.apache.flink.util.CollectionUtil;
 
 import org.apache.doris.flink.catalog.doris.DorisSchemaFactory;
 import org.apache.doris.flink.catalog.doris.DorisSystem;
+import org.apache.doris.flink.catalog.doris.FieldSchema;
 import org.apache.doris.flink.catalog.doris.TableSchema;
 import org.apache.doris.flink.exception.DorisSystemException;
 import org.apache.doris.flink.tools.cdc.DorisTableConfig;
@@ -30,10 +31,51 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
+import java.util.Map;
 
 /** Utility class for Doris table operations. */
 public class DorisTableUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DorisTableUtil.class);
+
+    /**
+     * Add CDC timestamp fields to a schema's field map for tracking change events. This method adds
+     * _source_ts_ms and _captured_ts_ms fields which are used for CDC timestamp tracking across all
+     * table creation flows.
+     *
+     * @param fields The field map to add timestamp fields to
+     */
+    public static void addCdcTimestampFields(Map<String, FieldSchema> fields) {
+        fields.put(
+                "_source_ts_ms",
+                new FieldSchema(
+                        "_source_ts_ms",
+                        "BIGINT",
+                        "Unix timestamp in milliseconds when the change event occurred in the source database (committed transaction time)"));
+        fields.put(
+                "_captured_ts_ms",
+                new FieldSchema(
+                        "_captured_ts_ms",
+                        "BIGINT",
+                        "Unix timestamp in milliseconds when the change event was captured by the CDC system for processing"));
+    }
+
+    /**
+     * Add CDC timestamp fields to a source schema for tracking change events.
+     *
+     * @param schema The source schema to add timestamp fields to
+     */
+    public static void addCdcTimestampFields(SourceSchema schema) {
+        addCdcTimestampFields(schema.getFields());
+    }
+
+    /**
+     * Add CDC timestamp fields to a table schema for tracking change events.
+     *
+     * @param tableSchema The table schema to add timestamp fields to
+     */
+    public static void addCdcTimestampFields(TableSchema tableSchema) {
+        addCdcTimestampFields(tableSchema.getFields());
+    }
 
     /**
      * Try to create a table in doris if it doesn't exist.

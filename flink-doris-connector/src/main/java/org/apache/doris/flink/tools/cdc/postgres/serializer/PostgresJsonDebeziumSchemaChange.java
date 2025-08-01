@@ -197,6 +197,10 @@ public class PostgresJsonDebeziumSchemaChange extends JsonDebeziumSchemaChange {
                             metaData, sourceDatabaseName, sourceSchemaName, sourceTable, "");
             schema.setModel(
                     !schema.getPrimaryKeys().isEmpty() ? DataModel.UNIQUE : DataModel.DUPLICATE);
+
+            // Add CDC timestamp fields for consistency with snapshot phase
+            DorisTableUtil.addCdcTimestampFields(schema);
+
             LOG.info(
                     "Fetched PostgreSQL schema for {}.{}: primaryKeys={}, fields={}",
                     sourceSchemaName,

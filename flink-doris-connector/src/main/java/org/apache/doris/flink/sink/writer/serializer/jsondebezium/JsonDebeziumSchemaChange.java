@@ -26,7 +26,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.doris.flink.catalog.doris.FieldSchema;
 import org.apache.doris.flink.cfg.DorisOptions;
+import org.apache.doris.flink.exception.DorisRuntimeException;
 import org.apache.doris.flink.exception.IllegalArgumentException;
 import org.apache.doris.flink.sink.schema.SchemaChangeManager;
 import org.apache.doris.flink.sink.writer.EventType;
@@ -34,10 +36,12 @@ import org.apache.doris.flink.tools.cdc.DorisTableConfig;
 import org.apache.doris.flink.tools.cdc.SourceConnector;
 import org.apache.doris.flink.tools.cdc.SourceSchema;
 import org.apache.doris.flink.tools.cdc.converter.TableNameConverter;
+import org.apache.doris.flink.tools.cdc.utils.DorisTableUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,7 +97,7 @@ public abstract class JsonDebeziumSchemaChange extends CdcSchemaChange {
     public abstract boolean schemaChange(JsonNode recordRoot);
 
     public void init(JsonNode recordRoot, String dorisTableName) {
-        // do nothing
+        ensureCdcTimestampColumns(dorisTableName);
     }
 
     /** When cdc synchronizes multiple tables, it will capture multiple table schema changes. */
@@ -232,5 +236,81 @@ public abstract class JsonDebeziumSchemaChange extends CdcSchemaChange {
     @VisibleForTesting
     public void setSchemaChangeManager(SchemaChangeManager schemaChangeManager) {
         this.schemaChangeManager = schemaChangeManager;
+    }
+
+    /**
+     * Ensure that CDC timestamp columns exist in the Doris table. This method checks if the
+     * required timestamp columns exist in the target table, and automatically adds them if they are
+     * missing. This handles cases where the connector is used with existing Doris tables that were
+     * created before timestamp column support.
+     *
+     * @param dorisTableName The full table identifier in format "database.table"
+     * @throws DorisRuntimeException if timestamp columns cannot be added or any other error occurs
+     */
+    private void ensureCdcTimestampColumns(String dorisTableName) {
+        // Only handle null/empty table name gracefully - this is expected in some cases
+        if (StringUtils.isNullOrWhitespaceOnly(dorisTableName)) {
+            LOG.debug("Table name is null or empty, skipping CDC timestamp column check");
+            return;
+        }
+
+        // All other errors should fail fast - these are configuration/infrastructure issues
+        String[] tableInfo = dorisTableName.split("\\.");
+        if (tableInfo.length != 2) {
+            String errorMsg =
+                    String.format(
+                            "Invalid table identifier format: %s, expected 'database.table'",
+                            dorisTableName);
+            LOG.error(errorMsg);
+            throw new DorisRuntimeException(errorMsg);
+        }
+
+        String database = tableInfo[0];
+        String table = tableInfo[1];
+
+        try {
+            // Get the CDC timestamp field definitions from our utility
+            Map<String, FieldSchema> timestampFields = new HashMap<>();
+            DorisTableUtil.addCdcTimestampFields(timestampFields);
+
+            // Check and add each timestamp column if missing
+            for (Map.Entry<String, FieldSchema> entry : timestampFields.entrySet()) {
+                String columnName = entry.getKey();
+                FieldSchema fieldSchema = entry.getValue();
+
+                if (!schemaChangeManager.checkColumnExists(database, table, columnName)) {
+                    boolean success = schemaChangeManager.addColumn(database, table, fieldSchema);
+                    if (success) {
+                        LOG.info(
+                                "Added {} column to existing table {}", columnName, dorisTableName);
+                    } else {
+                        String errorMsg =
+                                String.format(
+                                        "Failed to add required CDC timestamp column %s to table %s. "
+                                                + "This column is essential for CDC functionality.",
+                                        columnName, dorisTableName);
+                        LOG.error(errorMsg);
+                        throw new DorisRuntimeException(errorMsg);
+                    }
+                } else {
+                    LOG.debug(
+                            "CDC timestamp column {} already exists in table {}",
+                            columnName,
+                            dorisTableName);
+                }
+            }
+
+        } catch (DorisRuntimeException e) {
+            // Re-throw DorisRuntimeException (from failed column addition)
+            throw e;
+        } catch (Exception e) {
+            String errorMsg =
+                    String.format(
+                            "Failed to ensure CDC timestamp columns for table %s: %s. "
+                                    + "This is required for CDC functionality to work correctly.",
+                            dorisTableName, e.getMessage());
+            LOG.error(errorMsg, e);
+            throw new DorisRuntimeException(errorMsg, e);
+        }
     }
 }

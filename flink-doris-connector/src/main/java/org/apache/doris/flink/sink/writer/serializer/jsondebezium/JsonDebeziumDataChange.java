@@ -129,17 +129,26 @@ public class JsonDebeziumDataChange extends CdcDataChange {
 
     @Override
     protected Map<String, Object> extractBeforeRow(JsonNode record) {
-        return extractRow(record.get("before"));
+        Map<String, Object> valueMap = extractRow(record.get("before"));
+        addTsMs(valueMap, record);
+        return valueMap;
     }
 
     @Override
     protected Map<String, Object> extractAfterRow(JsonNode record) {
-        return extractRow(record.get("after"));
+        Map<String, Object> valueMap = extractRow(record.get("after"));
+        addTsMs(valueMap, record);
+        return valueMap;
     }
 
     private Map<String, Object> extractRow(JsonNode recordRow) {
         Map<String, Object> recordMap =
                 objectMapper.convertValue(recordRow, new TypeReference<Map<String, Object>>() {});
         return recordMap != null ? recordMap : new HashMap<>();
+    }
+
+    private void addTsMs(Map<String, Object> valueMap, JsonNode record) {
+        valueMap.put("_source_ts_ms", record.get("source").get("ts_ms").asLong());
+        valueMap.put("_captured_ts_ms", record.get("ts_ms").asLong());
     }
 }

@@ -69,7 +69,7 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
         Assert.assertEquals("2022-01-01 10:01:02", valueMap.get("dtime"));
         Assert.assertEquals("2022-01-01 10:01:03", valueMap.get("ts"));
         Assert.assertEquals("0", valueMap.get("__DORIS_DELETE_SIGN__"));
-        Assert.assertEquals(6, valueMap.size());
+        Assert.assertEquals(8, valueMap.size());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
         Assert.assertEquals("2022-01-01 10:01:02", valueMap.get("dtime"));
         Assert.assertEquals("2022-01-01 10:01:03", valueMap.get("ts"));
         Assert.assertEquals("0", valueMap.get("__DORIS_DELETE_SIGN__"));
-        Assert.assertEquals(6, valueMap.size());
+        Assert.assertEquals(8, valueMap.size());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
         Assert.assertEquals("2022-01-01 10:01:02", valueMap.get("dtime"));
         Assert.assertEquals("2022-01-01 10:01:03", valueMap.get("ts"));
         Assert.assertEquals("1", valueMap.get("__DORIS_DELETE_SIGN__"));
-        Assert.assertEquals(6, valueMap.size());
+        Assert.assertEquals(8, valueMap.size());
     }
 
     @Test
@@ -138,7 +138,7 @@ public class TestJsonDebeziumDataChange extends TestJsonDebeziumChangeBase {
         Assert.assertEquals("2022-01-01 10:01:02", valueMap.get("dtime"));
         Assert.assertEquals("2022-01-01 10:01:03", valueMap.get("ts"));
         Assert.assertEquals("0", valueMap.get("__DORIS_DELETE_SIGN__"));
-        Assert.assertEquals(6, valueMap.size());
+        Assert.assertEquals(8, valueMap.size());
 
         Map<String, String> beforeMap =
                 objectMapper.readValue(split[0], new TypeReference<Map<String, String>>() {});

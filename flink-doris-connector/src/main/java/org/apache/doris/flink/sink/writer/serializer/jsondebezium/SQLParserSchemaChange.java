@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.doris.flink.catalog.doris.TableSchema;
 import org.apache.doris.flink.sink.schema.SQLParserSchemaManager;
 import org.apache.doris.flink.sink.writer.EventType;
+import org.apache.doris.flink.tools.cdc.utils.DorisTableUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +92,14 @@ public class SQLParserSchemaChange extends JsonDebeziumSchemaChange {
         JsonNode historyRecord = extractHistoryRecord(record);
         String ddl = extractJsonNode(historyRecord, "ddl");
         extractSourceConnector(record);
-        return sqlParserSchemaManager.parseCreateTableStatement(
-                sourceConnector, ddl, dorisTable, dorisTableConfig);
+        TableSchema tableSchema =
+                sqlParserSchemaManager.parseCreateTableStatement(
+                        sourceConnector, ddl, dorisTable, dorisTableConfig);
+
+        // Add CDC timestamp fields for tracking change events
+        DorisTableUtil.addCdcTimestampFields(tableSchema);
+
+        return tableSchema;
     }
 
     @VisibleForTesting
