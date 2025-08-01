@@ -24,7 +24,6 @@ import org.apache.flink.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.doris.flink.catalog.doris.TableSchema;
 import org.apache.doris.flink.sink.schema.SQLParserSchemaManager;
-import org.apache.doris.flink.sink.schema.SchemaChangeManager;
 import org.apache.doris.flink.sink.writer.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,28 +37,8 @@ public class SQLParserSchemaChange extends JsonDebeziumSchemaChange {
     private final SQLParserSchemaManager sqlParserSchemaManager;
 
     public SQLParserSchemaChange(JsonDebeziumChangeContext changeContext) {
-        this.changeContext = changeContext;
-        this.dorisOptions = changeContext.getDorisOptions();
-        this.schemaChangeManager = new SchemaChangeManager(dorisOptions);
+        super(changeContext);
         this.sqlParserSchemaManager = new SQLParserSchemaManager();
-        this.tableMapping = changeContext.getTableMapping();
-        this.objectMapper = changeContext.getObjectMapper();
-        this.targetDatabase = changeContext.getTargetDatabase();
-        this.dorisTableConfig = changeContext.getDorisTableConf();
-        this.targetTablePrefix =
-                changeContext.getTargetTablePrefix() == null
-                        ? ""
-                        : changeContext.getTargetTablePrefix();
-        this.targetTableSuffix =
-                changeContext.getTargetTableSuffix() == null
-                        ? ""
-                        : changeContext.getTargetTableSuffix();
-        this.tableNameConverter = changeContext.getTableNameConverter();
-    }
-
-    @Override
-    public void init(JsonNode recordRoot, String dorisTableName) {
-        // do nothing
     }
 
     @Override

@@ -68,10 +68,33 @@ public abstract class JsonDebeziumSchemaChange extends CdcSchemaChange {
     protected String targetTableSuffix;
     protected DorisTableConfig dorisTableConfig;
     protected TableNameConverter tableNameConverter;
+    protected final boolean enableDelete;
+
+    public JsonDebeziumSchemaChange(JsonDebeziumChangeContext changeContext) {
+        this.changeContext = changeContext;
+        this.dorisOptions = changeContext.getDorisOptions();
+        this.schemaChangeManager = new SchemaChangeManager(dorisOptions);
+        this.tableMapping = changeContext.getTableMapping();
+        this.objectMapper = changeContext.getObjectMapper();
+        this.targetDatabase = changeContext.getTargetDatabase();
+        this.dorisTableConfig = changeContext.getDorisTableConf();
+        this.targetTablePrefix =
+                changeContext.getTargetTablePrefix() == null
+                        ? ""
+                        : changeContext.getTargetTablePrefix();
+        this.targetTableSuffix =
+                changeContext.getTargetTableSuffix() == null
+                        ? ""
+                        : changeContext.getTargetTableSuffix();
+        this.tableNameConverter = changeContext.getTableNameConverter();
+        this.enableDelete = changeContext.enableDelete();
+    }
 
     public abstract boolean schemaChange(JsonNode recordRoot);
 
-    public abstract void init(JsonNode recordRoot, String dorisTableName);
+    public void init(JsonNode recordRoot, String dorisTableName) {
+        // do nothing
+    }
 
     /** When cdc synchronizes multiple tables, it will capture multiple table schema changes. */
     protected boolean checkTable(JsonNode recordRoot) {

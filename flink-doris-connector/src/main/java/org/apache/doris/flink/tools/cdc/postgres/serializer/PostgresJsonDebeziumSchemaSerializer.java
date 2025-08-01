@@ -38,8 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static org.apache.doris.flink.sink.writer.LoadConstants.LINE_DELIMITER_DEFAULT;
@@ -67,6 +69,7 @@ public class PostgresJsonDebeziumSchemaSerializer implements DorisRecordSerializ
     private JsonDebeziumDataChange dataChange;
     private PostgresJsonDebeziumSchemaChange schemaChange;
     private TableNameConverter tableNameConverter;
+    private final Set<String> initTableSet = new HashSet<>();
     // jdbc url of the source database
     private String jdbcUrl;
     private Properties connectionProps;
@@ -146,14 +149,22 @@ public class PostgresJsonDebeziumSchemaSerializer implements DorisRecordSerializ
         String dorisTableName =
                 JsonDebeziumChangeUtils.getDorisTableIdentifier(
                         recordRoot, dorisOptions, tableMapping);
-        if (StringUtils.isNullOrWhitespaceOnly(dorisTableName)) {
-            // Auto-discovery
+        if (initSchemaChange(dorisTableName, recordRoot)) {
             schemaChange.init(recordRoot, dorisTableName);
         }
-
         schemaChange.schemaChange(recordRoot);
-
         return dataChange.serialize(record, recordRoot, op);
+    }
+
+    private boolean initSchemaChange(String dorisTableName, JsonNode recordRoot) {
+        if (StringUtils.isNullOrWhitespaceOnly(dorisTableName)) {
+            dorisTableName = schemaChange.createDorisTable(recordRoot);
+
+        } else if (initTableSet.contains(dorisTableName)) {
+            return false;
+        }
+        initTableSet.add(dorisTableName);
+        return true;
     }
 
     private String extractJsonNode(JsonNode record, String key) {

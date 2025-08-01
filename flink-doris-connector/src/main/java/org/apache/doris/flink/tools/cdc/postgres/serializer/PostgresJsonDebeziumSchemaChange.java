@@ -22,7 +22,6 @@ import org.apache.doris.flink.catalog.doris.DataModel;
 import org.apache.doris.flink.catalog.doris.DorisSystem;
 import org.apache.doris.flink.catalog.doris.FieldSchema;
 import org.apache.doris.flink.exception.DorisRuntimeException;
-import org.apache.doris.flink.sink.schema.SchemaChangeManager;
 import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumChangeContext;
 import org.apache.doris.flink.sink.writer.serializer.jsondebezium.JsonDebeziumSchemaChange;
 import org.apache.doris.flink.tools.cdc.SourceSchema;
@@ -55,43 +54,11 @@ public class PostgresJsonDebeziumSchemaChange extends JsonDebeziumSchemaChange {
 
     public PostgresJsonDebeziumSchemaChange(
             JsonDebeziumChangeContext changeContext, String jdbcUrl, Properties connectionProps) {
-        this.changeContext = changeContext;
-        this.objectMapper = changeContext.getObjectMapper();
-        this.dorisOptions = changeContext.getDorisOptions();
-        this.tableMapping = changeContext.getTableMapping();
-        this.targetDatabase = changeContext.getTargetDatabase();
-        this.dorisTableConfig = changeContext.getDorisTableConf();
-        this.tableNameConverter = changeContext.getTableNameConverter();
-        this.schemaChangeManager = new SchemaChangeManager(dorisOptions);
-
+        super(changeContext);
         this.jdbcUrl = jdbcUrl;
         this.connectionProps = connectionProps;
         this.dorisSystem = new DorisSystem(dorisOptions);
         this.tableFields = new HashMap<>();
-    }
-
-    @Override
-    public void init(JsonNode recordRoot, String dorisTableName) {
-        // Parse table identifiers
-        String cdcTableIdentifier = getCdcTableIdentifier(recordRoot);
-        String[] split = cdcTableIdentifier.split("\\.");
-        String sourceSchema = split[1];
-        String sourceTable = split[2];
-        String dorisTable = tableNameConverter.convert(sourceTable);
-
-        // Fetch the schema from the source database and create the table in Doris
-        LOG.info("Auto-discovery: Creating table {}.{}", this.targetDatabase, dorisTable);
-        SourceSchema postgresSchema = fetchPostgresSchema(sourceSchema, sourceTable);
-        DorisTableUtil.tryCreateTableIfAbsent(
-                dorisSystem,
-                this.targetDatabase,
-                dorisTable,
-                postgresSchema,
-                this.dorisTableConfig);
-
-        // Add the table to the table mapping
-        tableMapping.put(
-                cdcTableIdentifier, String.format("%s.%s", this.targetDatabase, dorisTable));
     }
 
     @Override
@@ -173,6 +140,30 @@ public class PostgresJsonDebeziumSchemaChange extends JsonDebeziumSchemaChange {
         }
 
         return true;
+    }
+
+    public String createDorisTable(JsonNode recordRoot) {
+        // Parse table identifiers
+        String cdcTableIdentifier = getCdcTableIdentifier(recordRoot);
+        String[] split = cdcTableIdentifier.split("\\.");
+        String sourceSchema = split[1];
+        String sourceTable = split[2];
+        String dorisTable = tableNameConverter.convert(sourceTable);
+        String dorisTableName = String.format("%s.%s", this.targetDatabase, dorisTable);
+
+        // Fetch the schema from the source database and create the table in Doris
+        LOG.info("Creating Doris table {}", dorisTableName);
+        SourceSchema postgresSchema = fetchPostgresSchema(sourceSchema, sourceTable);
+        DorisTableUtil.tryCreateTableIfAbsent(
+                dorisSystem,
+                this.targetDatabase,
+                dorisTable,
+                postgresSchema,
+                this.dorisTableConfig);
+
+        // Add the table to the table mapping
+        tableMapping.put(cdcTableIdentifier, dorisTableName);
+        return dorisTableName;
     }
 
     private SourceSchema fetchPostgresSchema(String sourceSchemaName, String sourceTable) {
