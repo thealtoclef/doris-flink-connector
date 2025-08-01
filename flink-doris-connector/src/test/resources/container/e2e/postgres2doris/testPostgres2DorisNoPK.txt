@@ -1,0 +1,12 @@
+postgres-sync-database
+    --database test_e2e_postgres
+    --postgres-conf database-name=postgres
+    --postgres-conf schema-name=test_e2e_postgres
+    --table-prefix ods_
+    --table-suffix _nopk
+    --including-tables "tbl_nopk.*"
+    --table-conf replication_num=1
+    --sink-conf sink.check-interval=5000
+    --sink-conf sink.enable.batch-mode=true
+    --single-sink true
+    --ignore-default-value false

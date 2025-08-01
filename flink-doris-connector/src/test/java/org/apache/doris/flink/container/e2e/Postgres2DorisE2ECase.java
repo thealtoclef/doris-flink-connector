@@ -333,7 +333,7 @@ public class Postgres2DorisE2ECase extends AbstractE2EService {
                         "doris_3,3",
                         "doris_3_1,12");
         String incrementDataSql =
-                "select * from ( select * from test_e2e_postgres.ods_tbl1_incr union all select * from test_e2e_postgres.ods_tbl2_incr union all select * from test_e2e_postgres.ods_tbl3_incr union all select * from test_e2e_postgres.ods_tbl6_incr) res order by 1";
+                "select * from ( select name, age from test_e2e_postgres.ods_tbl1_incr union all select name, age from test_e2e_postgres.ods_tbl2_incr union all select name, age from test_e2e_postgres.ods_tbl3_incr union all select name, age from test_e2e_postgres.ods_tbl6_incr) res order by 1";
         ContainerUtils.checkResult(
                 getDorisQueryConnection(), LOG, incrementDataExpected, incrementDataSql, 2);
 
@@ -406,6 +406,108 @@ public class Postgres2DorisE2ECase extends AbstractE2EService {
             return createTblSql;
         }
         throw new RuntimeException("Table not exist " + table);
+    }
+
+    @Test
+    public void testPostgres2DorisNoPK() throws Exception {
+        String jobName = "testPostgres2DorisNoPK";
+        initEnvironment(jobName, "container/e2e/postgres2doris/testPostgres2DorisNoPK_init.sql");
+        startPostgres2DorisJob(jobName, "container/e2e/postgres2doris/testPostgres2DorisNoPK.txt");
+
+        // wait 2 times checkpoint
+        Thread.sleep(20000);
+        LOG.info("Start to verify table creation and data for tables without primary keys.");
+
+        // Check that tables were created
+        String tblQuery =
+                String.format(
+                        "SELECT TABLE_NAME \n"
+                                + "FROM INFORMATION_SCHEMA.TABLES \n"
+                                + "WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME LIKE 'ods%%nopk%%'",
+                        DATABASE);
+        List<String> expectedTables =
+                Arrays.asList("ods_tbl_nopk1_nopk", "ods_tbl_nopk2_nopk", "ods_tbl_nopk3_nopk");
+        ContainerUtils.checkResult(
+                getDorisQueryConnection(), LOG, expectedTables, tblQuery, 1, true);
+
+        LOG.info("Start to verify init data for tables without primary keys.");
+        List<String> expected1 = Arrays.asList("1,doris_1,18");
+        String sql1 = "select id, name, age from test_e2e_postgres.ods_tbl_nopk1_nopk order by id";
+        ContainerUtils.checkResult(getDorisQueryConnection(), LOG, expected1, sql1, 3);
+
+        List<String> expected2 = Arrays.asList("1,doris_2,25,Engineering");
+        String sql2 =
+                "select id, name, age, department from test_e2e_postgres.ods_tbl_nopk2_nopk order by id";
+        ContainerUtils.checkResult(getDorisQueryConnection(), LOG, expected2, sql2, 4);
+
+        List<String> expected3 = Arrays.asList("1,doris_3,doris3@example.com,30");
+        String sql3 =
+                "select id, name, email, age from test_e2e_postgres.ods_tbl_nopk3_nopk order by id";
+        ContainerUtils.checkResult(getDorisQueryConnection(), LOG, expected3, sql3, 4);
+
+        // Verify table schema - all tables should be DUPLICATE key model since no primary keys
+        String createTblSQL1 = getCreateTableSQL(DATABASE, "ods_tbl_nopk1_nopk");
+        Assert.assertTrue(
+                "Table without PK should use DUPLICATE key model",
+                createTblSQL1.contains("DUPLICATE KEY"));
+        Assert.assertFalse(
+                "Table without PK should not use UNIQUE key model",
+                createTblSQL1.contains("UNIQUE KEY"));
+
+        String createTblSQL2 = getCreateTableSQL(DATABASE, "ods_tbl_nopk2_nopk");
+        Assert.assertTrue(
+                "Table without PK should use DUPLICATE key model",
+                createTblSQL2.contains("DUPLICATE KEY"));
+        Assert.assertFalse(
+                "Table without PK should not use UNIQUE key model",
+                createTblSQL2.contains("UNIQUE KEY"));
+
+        String createTblSQL3 = getCreateTableSQL(DATABASE, "ods_tbl_nopk3_nopk");
+        Assert.assertTrue(
+                "Table without PK should use DUPLICATE key model",
+                createTblSQL3.contains("DUPLICATE KEY"));
+        Assert.assertFalse(
+                "Table without PK should not use UNIQUE key model",
+                createTblSQL3.contains("UNIQUE KEY"));
+
+        // Test incremental data operations on tables without primary keys
+        LOG.info("Start to add incremental data for tables without primary keys.");
+        ContainerUtils.executeSQLStatement(
+                getPostgresQueryConnection(),
+                LOG,
+                "INSERT INTO test_e2e_postgres.tbl_nopk1 VALUES (2, 'doris_1_new', 22, '2023-01-02 10:00:00')",
+                "INSERT INTO test_e2e_postgres.tbl_nopk1 VALUES (1, 'doris_1_dup', 19, '2023-01-03 10:00:00')", // duplicate id is allowed without PK
+                "INSERT INTO test_e2e_postgres.tbl_nopk2 VALUES (2, 'doris_2_new', 28, 'Marketing')",
+                "INSERT INTO test_e2e_postgres.tbl_nopk3 VALUES (2, 'doris_3_new', 'doris3new@example.com', 32)");
+
+        Thread.sleep(20000);
+
+        LOG.info("Start to verify incremental data for tables without primary keys.");
+        // Note: DUPLICATE key model allows duplicate records, so we should see all records
+        List<String> incrementalExpected1 =
+                Arrays.asList("1,doris_1,18", "1,doris_1_dup,19", "2,doris_1_new,22");
+        String incrementalSql1 =
+                "select id, name, age from test_e2e_postgres.ods_tbl_nopk1_nopk order by id, name";
+        ContainerUtils.checkResult(
+                getDorisQueryConnection(), LOG, incrementalExpected1, incrementalSql1, 3);
+
+        List<String> incrementalExpected2 =
+                Arrays.asList("1,doris_2,25,Engineering", "2,doris_2_new,28,Marketing");
+        String incrementalSql2 =
+                "select id, name, age, department from test_e2e_postgres.ods_tbl_nopk2_nopk order by id";
+        ContainerUtils.checkResult(
+                getDorisQueryConnection(), LOG, incrementalExpected2, incrementalSql2, 4);
+
+        List<String> incrementalExpected3 =
+                Arrays.asList(
+                        "1,doris_3,doris3@example.com,30",
+                        "2,doris_3_new,doris3new@example.com,32");
+        String incrementalSql3 =
+                "select id, name, email, age from test_e2e_postgres.ods_tbl_nopk3_nopk order by id";
+        ContainerUtils.checkResult(
+                getDorisQueryConnection(), LOG, incrementalExpected3, incrementalSql3, 4);
+
+        cancelE2EJob(jobName);
     }
 
     @After
