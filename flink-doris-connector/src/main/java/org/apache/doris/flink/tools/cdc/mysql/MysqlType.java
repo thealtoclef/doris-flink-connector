@@ -122,6 +122,7 @@ public class MysqlType {
             case MEDIUMINT_UNSIGNED:
             case MEDIUMINT_UNSIGNED_ZEROFILL:
             case BIGINT:
+            case SERIAL:
                 return DorisType.BIGINT;
             case BIGINT_UNSIGNED:
             case BIGINT_UNSIGNED_ZEROFILL:
