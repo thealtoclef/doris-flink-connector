@@ -158,7 +158,18 @@ public class PostgresJsonDebeziumSchemaSerializer implements DorisRecordSerializ
 
     private boolean initSchemaChange(String dorisTableName, JsonNode recordRoot) {
         if (StringUtils.isNullOrWhitespaceOnly(dorisTableName)) {
-            dorisTableName = schemaChange.createDorisTable(recordRoot);
+            String cdcIdentifier = JsonDebeziumChangeUtils.getCdcTableIdentifier(recordRoot);
+            String op = extractJsonNode(recordRoot, "op");
+
+            // Only create tables for create and update operations with valid CDC identifiers
+            if (cdcIdentifier != null
+                    && !cdcIdentifier.trim().isEmpty()
+                    && op != null
+                    && (op.equals("c") || op.equals("u"))) {
+                dorisTableName = schemaChange.createDorisTable(recordRoot);
+            } else {
+                return false;
+            }
 
         } else if (initTableSet.contains(dorisTableName)) {
             return false;

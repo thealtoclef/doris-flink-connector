@@ -145,25 +145,34 @@ public class PostgresJsonDebeziumSchemaChange extends JsonDebeziumSchemaChange {
     public String createDorisTable(JsonNode recordRoot) {
         // Parse table identifiers
         String cdcTableIdentifier = getCdcTableIdentifier(recordRoot);
-        String[] split = cdcTableIdentifier.split("\\.");
-        String sourceSchema = split[1];
-        String sourceTable = split[2];
-        String dorisTable = tableNameConverter.convert(sourceTable);
-        String dorisTableName = String.format("%s.%s", this.targetDatabase, dorisTable);
 
-        // Fetch the schema from the source database and create the table in Doris
-        LOG.info("Creating Doris table {}", dorisTableName);
-        SourceSchema postgresSchema = fetchPostgresSchema(sourceSchema, sourceTable);
-        DorisTableUtil.tryCreateTableIfAbsent(
-                dorisSystem,
-                this.targetDatabase,
-                dorisTable,
-                postgresSchema,
-                this.dorisTableConfig);
+        try {
+            String[] split = cdcTableIdentifier.split("\\.");
+            String sourceSchema = split[1];
+            String sourceTable = split[2];
+            String dorisTable = tableNameConverter.convert(sourceTable);
+            String dorisTableName = String.format("%s.%s", this.targetDatabase, dorisTable);
 
-        // Add the table to the table mapping
-        tableMapping.put(cdcTableIdentifier, dorisTableName);
-        return dorisTableName;
+            // Fetch the schema from the source database and create the table in Doris
+            LOG.info("Creating Doris table {}", dorisTableName);
+            SourceSchema postgresSchema = fetchPostgresSchema(sourceSchema, sourceTable);
+            DorisTableUtil.tryCreateTableIfAbsent(
+                    dorisSystem,
+                    this.targetDatabase,
+                    dorisTable,
+                    postgresSchema,
+                    this.dorisTableConfig);
+
+            // Add the table to the table mapping
+            tableMapping.put(cdcTableIdentifier, dorisTableName);
+            return dorisTableName;
+        } catch (Exception e) {
+            throw new DorisRuntimeException(
+                    String.format(
+                            "Failed to parse CDC table identifier '%s'. Record source: %s, record op: %s",
+                            cdcTableIdentifier, recordRoot.get("source"), recordRoot.get("op")),
+                    e);
+        }
     }
 
     private SourceSchema fetchPostgresSchema(String sourceSchemaName, String sourceTable) {
