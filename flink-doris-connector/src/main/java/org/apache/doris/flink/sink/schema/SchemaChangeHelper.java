@@ -41,6 +41,8 @@ public class SchemaChangeHelper {
             "SELECT COLUMN_NAME FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND COLUMN_NAME = '%s'";
     private static final String CHECK_DATABASE_EXISTS =
             "SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA` WHERE SCHEMA_NAME = '%s'";
+    private static final String CHECK_TABLE_EXISTS =
+            "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'";
     private static final String CREATE_DATABASE_DDL = "CREATE DATABASE IF NOT EXISTS %s";
     private static final String MODIFY_TYPE_DDL = "ALTER TABLE %s MODIFY COLUMN %s %s";
     private static final String MODIFY_COMMENT_DDL = "ALTER TABLE %s MODIFY COLUMN %s COMMENT '%s'";
@@ -153,6 +155,10 @@ public class SchemaChangeHelper {
 
     public static String buildDatabaseExistsQuery(String database) {
         return String.format(CHECK_DATABASE_EXISTS, database);
+    }
+
+    public static String buildTableExistsQuery(String database, String table) {
+        return String.format(CHECK_TABLE_EXISTS, database, table);
     }
 
     public static String buildCreateDatabaseDDL(String database) {

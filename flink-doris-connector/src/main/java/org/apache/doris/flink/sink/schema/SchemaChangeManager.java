@@ -326,6 +326,13 @@ public class SchemaChangeManager implements Serializable {
         return sendHttpPostRequest(existsQuery, SchemaChangeHelper.DEFAULT_DATABASE);
     }
 
+    /** Check if table exists in the database. */
+    public boolean checkTableExists(String database, String table)
+            throws IllegalArgumentException, IOException {
+        String existsQuery = SchemaChangeHelper.buildTableExistsQuery(database, table);
+        return sendHttpPostRequest(existsQuery, SchemaChangeHelper.DEFAULT_DATABASE);
+    }
+
     private boolean sendHttpPostRequest(String sql, String database)
             throws IOException, IllegalArgumentException {
         HttpPost httpPost = buildHttpPost(sql, database);

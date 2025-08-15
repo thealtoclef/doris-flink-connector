@@ -97,7 +97,7 @@ public abstract class JsonDebeziumSchemaChange extends CdcSchemaChange {
     public abstract boolean schemaChange(JsonNode recordRoot);
 
     public void init(JsonNode recordRoot, String dorisTableName) {
-        ensureCdcTimestampColumns(dorisTableName);
+        ensureTableExistsAndSetupCdcColumns(dorisTableName);
     }
 
     /** When cdc synchronizes multiple tables, it will capture multiple table schema changes. */
@@ -239,15 +239,19 @@ public abstract class JsonDebeziumSchemaChange extends CdcSchemaChange {
     }
 
     /**
-     * Ensure that CDC timestamp columns exist in the Doris table. This method checks if the
-     * required timestamp columns exist in the target table, and automatically adds them if they are
-     * missing. This handles cases where the connector is used with existing Doris tables that were
-     * created before timestamp column support.
+     * Ensure that the destination table exists and CDC timestamp columns are properly set up. This
+     * method performs the following operations: 1. Checks if the destination table exists in Doris
+     * 2. If missing, logs warning and skips column setup (manual intervention required) 3. If
+     * present, ensures CDC timestamp columns exist and adds them if missing
+     *
+     * <p>This handles cases where: - Tables are deleted from destination during CDC replication
+     * (prevents crash, warns user) - Connector is used with existing tables created before
+     * timestamp column support
      *
      * @param dorisTableName The full table identifier in format "database.table"
      * @throws DorisRuntimeException if timestamp columns cannot be added or any other error occurs
      */
-    private void ensureCdcTimestampColumns(String dorisTableName) {
+    private void ensureTableExistsAndSetupCdcColumns(String dorisTableName) {
         // Only handle null/empty table name gracefully - this is expected in some cases
         if (StringUtils.isNullOrWhitespaceOnly(dorisTableName)) {
             LOG.debug("Table name is null or empty, skipping CDC timestamp column check");
@@ -269,6 +273,15 @@ public abstract class JsonDebeziumSchemaChange extends CdcSchemaChange {
         String table = tableInfo[1];
 
         try {
+            // Check if the table exists - if not, log warning and skip
+            if (!schemaChangeManager.checkTableExists(database, table)) {
+                LOG.warn(
+                        "Table {} does not exist in Doris but CDC events are being processed for it. "
+                                + "This indicates the table was deleted from destination while CDC replication is running. "
+                                + "Skipping table initialization and CDC column setup. Manual intervention required to recreate table.",
+                        dorisTableName);
+                return;
+            }
             // Get the CDC timestamp field definitions from our utility
             Map<String, FieldSchema> timestampFields = new HashMap<>();
             DorisTableUtil.addCdcTimestampFields(timestampFields);
