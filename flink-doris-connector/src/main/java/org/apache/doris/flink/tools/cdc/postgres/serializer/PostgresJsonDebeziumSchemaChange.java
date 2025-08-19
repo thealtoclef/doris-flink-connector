@@ -67,6 +67,24 @@ public class PostgresJsonDebeziumSchemaChange extends JsonDebeziumSchemaChange {
         String cdcTableIdentifier = getCdcTableIdentifier(recordRoot);
         String dorisTableIdentifier =
                 getDorisTableIdentifier(cdcTableIdentifier, dorisOptions, tableMapping);
+
+        // Handle case where table identifier cannot be determined
+        if (dorisTableIdentifier == null) {
+            LOG.error(
+                    "Unable to determine Doris table identifier for CDC table: {}. "
+                            + "This indicates missing table mapping configuration or unsupported table structure. "
+                            + "This is a configuration error that must be fixed. CDC processing cannot continue safely for this table. "
+                            + "Record content: {}",
+                    cdcTableIdentifier,
+                    recordRoot);
+            // This is a configuration error, not a transient issue - should fail fast
+            throw new DorisRuntimeException(
+                    String.format(
+                            "Failed to determine Doris table identifier for CDC table '%s'. "
+                                    + "Please check table mapping configuration. Record: %s",
+                            cdcTableIdentifier, recordRoot));
+        }
+
         String[] split = dorisTableIdentifier.split("\\.");
         String dorisDatabase = split[0];
         String dorisTable = split[1];
