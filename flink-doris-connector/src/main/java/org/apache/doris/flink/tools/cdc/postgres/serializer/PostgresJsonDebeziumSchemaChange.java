@@ -65,6 +65,18 @@ public class PostgresJsonDebeziumSchemaChange extends JsonDebeziumSchemaChange {
     public boolean schemaChange(JsonNode recordRoot) {
         // Parse table identifiers
         String cdcTableIdentifier = getCdcTableIdentifier(recordRoot);
+        if (cdcTableIdentifier == null) {
+            LOG.error(
+                    "Unable to determine CDC table identifier from record. "
+                            + "This indicates missing source information in the Debezium record. "
+                            + "Record content: {}",
+                    recordRoot);
+            throw new DorisRuntimeException(
+                    String.format(
+                            "Failed to determine CDC table identifier from record. Record: %s",
+                            recordRoot));
+        }
+
         String dorisTableIdentifier =
                 getDorisTableIdentifier(cdcTableIdentifier, dorisOptions, tableMapping);
 
